@@ -1,0 +1,515 @@
+---
+title: "Introduction to Bayesian Thinking"
+subtitle: 'Professor Karsten T. Hansen'
+author: "UC San Diego, Rady School of Management"
+date: "MGTA 495, Spring 2022"
+output:
+  ioslides_presentation:
+    smaller: true 
+    self_contained: true
+    transition: faster
+    widescreen: true
+    css: myCSS.css
+---
+
+<style>
+slides > slide.backdrop {
+  background: white;
+}
+</style>
+
+```{r setup, echo=FALSE,warning=FALSE,message=FALSE}
+library(knitr)
+opts_chunk$set(echo = FALSE,warning=FALSE,message=FALSE)
+read_chunk('code/code1.R')
+```
+
+
+## Example: Estimating User Interest in a new App
+
+- Suppose we are interested in estimating the interest among users in using a newly developed subscription smart phone app
+
+- Let the true adoption rate in the market segment of interest be $\lambda$. 
+
+- Let $Y_i=1$ if user $i$ is interested in adoption. Then 
+        $$
+        {\rm Pr}(Y_i=1|\lambda) = \lambda. 
+        $$
+- Suppose we survey $n=100$ users and ask them about adoption.
+
+- We wish to learn what plausible values of $\lambda$ might be
+
+## Interest in size of $\lambda$
+
+- Suppose development cost for the app was $C_D$
+- Furthermore suppose that the monthly fixed cost of maintaining the app is $C_M$
+- Assume the monthly subscription fee is $\pi$. 
+- Finally assume that the target market size is $M$. 
+
+In this case the monthly app profit is 
+$$
+{\rm profit} = \pi \times \lambda \times M - C_M
+$$
+Suppose we decide to launch the app if we can recoup the development cost in 12 months:
+
+$$
+12 \times {\rm profit} > C_D \iff \lambda > \underline{\lambda} \equiv \frac{\tfrac{C_D}{12} + C_M}{ \pi \times M }
+$$
+$\implies$ <span style="color: red;">We need ${\rm Pr}(\lambda > \underline{\lambda})$</span>.
+
+
+
+## 
+
+- Consider the following question: For different reasonable values of $\lambda$, what is the range of adopters we would expect to see in a sample of size $n=100$?
+- We can easily simulate this.
+- Suppose we believe the following: $\lambda$ is probably bigger than 1 pct. and probably less than 50 pct. In between 0.01 and 0.50 we believe that any value is as likely as any other. 
+-  We can represent this belief as a uniform distribution on $[0.01,0.50]$
+- We can then do the following many times: 
+    - Draw a random $\lambda$ from $[0.01,0.50]$
+    - Simulate unemployment status for 100 hypothetical graduates given $\lambda$
+
+
+## 
+
+```{r sim_adoption, warning=FALSE,fig.width=9,fig.height=5}
+```
+
+
+## Distribution of $\lambda$ conditional on data
+
+```{r hist_cond_data,fig.width=5,fig.height=5}
+```
+
+
+## Insights
+
+- If we observe 20 adopters in a sample of 100 potential users, then plausible values of $\lambda$ are between 0.1 and 0.35 with the most likely values around 0.2
+- If we observe 10 adopters in a sample of 100 potential users, then plausible values of $\lambda$ are between 0.02 and 0.2 with the most likely values around 0.1 
+- Note that you can make probability statements about $\lambda$ with this approach. For example, we can ask: what is the probability that $\lambda$ is between 0.15 and 0.25?
+
+## Decision 
+
+```{r calcProb}
+```   
+
+- Suppose $\underline{\lambda} = 0.3$.
+- Before observing any data, we have 
+$$
+{\rm Pr}(\lambda > \underline{\lambda}) = \frac{0.5 - 0.3}{0.5-0.01} \approx 41\% 
+$$
+- Suppose we observe 20 adopters in the sample - what is ${\rm Pr}(\lambda > \underline{\lambda})$  after learning this information?
+
+- We can approximate this probability by looking at the fraction of times $\lambda > 0.3$ in all the simulated samples where $y=20$. This is 
+$$
+{\rm Pr}(\lambda > \underline{\lambda} | {\rm data}) \approx \frac{\# \lbrace \lambda > 0.3 | y = 20 \rbrace}{\# \lbrace y = 20 \rbrace} = `r prettyNum(probP,digits=2)`
+$$
+
+
+## Classical Approach: Distribution of Estimator Conditional on Fixed Parameter
+
+- In the classical approach we start by proposing an **estimator** $\hat \lambda$ of $\lambda$. This is just some function of the data. 
+- We then study the properties of this estimator in **repeated samples**, that is, we consider the variation of $\hat \lambda$ across repeated hypothetical samples. This is just a thought experiment - we always only have one sample
+- The standard estimator for this problem is 
+$$
+\hat \lambda = \frac{\sum_i y_i}{100}
+$$
+- So if we observe 20 adopters in a sample of 100, then $\hat \lambda = 0.2$.
+
+- The estimator is out best guess of the true $\lambda$. But how do we get plausible values of $\lambda$? 
+
+## Repeated Sample Distribution 
+
+- Suppose we get repeated samples of $N=100$ and we keep applying the estimator $\hat \lambda$. What is the distribution of the realized estimates $\hat \lambda_1,\hat \lambda_2,\dots$?
+
+
+```{r hist_estimator,fig.width=8,fig.height=4.5}
+```
+
+## Summary
+
+- First Approach = Bayesian
+    - Statements about $\lambda$ are made conditional on the observed data 
+    - No requirements of population/repeated sample set-up
+    - You can make probability statements about parameters ($\lambda$) and hypotheses (e.g., $0.1 < \lambda < 0.2$)
+    - You can add prior information about $\lambda$
+
+- Second Approach = Classical 
+    - Parameters are fixed constants 
+    - Estimators are evaluated in repeated samples from population
+    - You cannot make probability statements about parameters or hypotheses (e.g., you cannot evaluate the probability that $0.1 < \lambda < 0.2$).
+    - Hard to add prior information 
+
+
+## Classical Approach: Probability = ?
+
+- Long run frequency of outcome of a "repeated random experiment"
+
+- But..
+    - Hard to define precisely what a random experiment is!
+    - What about situations where repeated random experiments doesn't make sense?
+    - Can we ever get repeated random samples - where nothing else changes - except a random draw? 
+
+## Bayesian Approach: Probability = ?
+
+- Everything not observed has a probability distribution attached to it
+- This probability distribution encodes the uncertainty associated with the corresponding quantity
+- For example, in the example above we had $\lambda \in  {\rm Uniform}[0.01,0.50]$ before we observed any data. This reflected our current beliefs about the unknown quantity $\lambda$. 
+
+- In this interpretation probabilities are detached from the idea of describing something "random". Instead <span style="color: red;">probabilities encode how uncertain something unknown is</span>.
+
+## {.flexbox .vcenter}
+
+<div class="centered">
+<font size="22">Bayesian Foundations</font>
+</div>
+
+
+## Two Required Ingredients to a Bayesian Model
+
+- Generative Model of Data:
+$$
+p(Y|\theta)
+$$
+where $Y = {\rm observed ~data}$. This is also called the <span style="color: red;">the likelihood function</span>. It specifies the joint distribution of the observed data, conditional on the unknown parameters/weights. 
+
+- Prior knowledge:
+$$
+p(\theta)
+$$
+This is called the <span style="color: red;">prior distribution</span>. It characterizes the state of our knowledge about the parameters $\theta$ before we observe any data. 
+
+## Bayesian Updating
+
+- After having observed the data $Y$ we update our knowledge about the parameters $\theta$ using Bayes Rule:
+$$
+p(\theta|Y) = \frac{p(Y|\theta) p(\theta)}{p(Y)} = \frac{p(Y|\theta) p(\theta)}{ \int p(Y|\theta) p(\theta) d\theta}
+$$
+
+This is called the <span style="color: red;">posterior distribution</span>. It characterizes the state of our knowledge about the parameters $\theta$ after having observed the data. 
+
+- Note that $\theta$ is typically a large dimensional array of parameters. The posterior is a multidimensional distribution. 
+
+- A Bayesian analysis involves a full characterization of the posterior distribution
+
+- Only in the simplest model can the posterior distribution be derived analytically. In complex models this distribution is characterized using numerical techniques. 
+
+## Example I
+
+- Let's derive the posterior distribution of $\lambda$ in the example above. To make the math a little easier assume that the prior is a standard uniform distribution: $U(0,1)$. 
+
+- The full model is 
+$$
+\begin{aligned}
+{\rm Pr}(Y_i=y_i|\lambda) & = \lambda^{y_i} (1-\lambda)^{1-y_i},\qquad i=1,\dots,N; \\
+p(\lambda) & = {\rm U}(0,1).
+\end{aligned}
+$$
+- The likelihood function is 
+$$
+\begin{aligned}
+{\rm Pr}(Y_1=y_1,\dots,Y_N=y_N|\lambda) & = \prod_{i=1}^N {\rm Pr}(Y_i=y_i|\lambda) =  \prod_{i=1}^N \lambda^{y_i} (1-\lambda)^{1-y_i}. \\
+& = \lambda^{N_1} (1-\lambda)^{N-N_1},
+\end{aligned}
+$$
+where $N_1 = \# \lbrace i: y_i = 1 \rbrace$.
+
+##
+
+ - The posterior distribution is then 
+
+$$
+\begin{aligned}
+p(\lambda|Y) & = \frac{ \lambda^{N_1} (1-\lambda)^{N-N_1} \; {\rm U}(\lambda|0,1)}{ \int \lambda^{N_1} (1-\lambda)^{N-N_1} \;  {\rm U}(\lambda|0,1) d\lambda}, \\
+& = \frac{ \lambda^{N_1} (1-\lambda)^{N-N_1} \; \mathbb{I}(\lambda \in (0,1))}{ \int \lambda^{N_1} (1-\lambda)^{N-N_1} \;  \mathbb{I}(\lambda \in (0,1)) d\lambda}, \\
+& = \frac{1}{{\rm B}(N_1+1,N-N_1+1)} \lambda^{N_1} (1-\lambda)^{N-N_1}, \\
+\end{aligned}
+$$
+where $B(a,b)$ is the [beta function](https://en.wikipedia.org/wiki/Beta_function) defined as 
+$$
+B(a,b) \equiv \int_{0}^1 t^{a-1} (1-t)^{b-1} dt
+$$
+- This is the density of the [beta distribution](https://en.wikipedia.org/wiki/Beta_distribution):
+$$
+p(\lambda|Y) = {\rm Beta}(\lambda|N_1+1,N-N_1+1).
+$$
+
+##
+
+<div class="columns-2">
+```{r plotBetaPost, fig.width=4,fig.height=5}
+```
+
+
+  - The beta distribution $B(a,b)$ has mean $a/(a+b)$
+  - Therefore the posterior mean of $\lambda$ is
+  $$
+  {\rm E}[\lambda|Y] = \frac{N_1+1}{N+2} = \frac{21}{102} \approx 0.206 
+  $$
+  - Under the uniform prior we have for $\underline{\lambda} = 0.3$:
+  $$
+  \begin{aligned}
+  {\rm Pr}(\lambda > \underline{\lambda}) & = 70\%, \\
+  {\rm Pr}(\lambda > \underline{\lambda}|Y) & = 1.4\%, 
+  \end{aligned}
+  $$
+  where the second probability is the right tail probability at 0.3 for a Beta(21,81) distribution:
+```{r, eval=FALSE,echo=TRUE}
+pbeta(0.3,21,81,lower.tail = F)
+```
+</div>
+
+## Different Prior 
+
+- Suppose the uniform prior doesn't capture our prior state of knowledge
+- A more general prior for a fraction is 
+$$
+\lambda \sim {\rm Beta}(a_0,b_0)
+$$
+- This has the uniform distribution as a special case ($a_0=b_0=1$)
+
+- This prior can characterize asymmetric distributions of $\lambda$, e.g., $a_0=$ and $b_0=10$.
+
+- The posterior can easily be derived to be 
+
+$$
+p(\lambda|Y) = {\rm Beta}(\lambda|N_1+a_0,N-N_1+b_0).
+$$
+
+
+## Posterior Predictive Distribution 
+
+- What is the distribution of a new data point y_{N+1} conditional on observing $Y = \lbrace y_i \rbrace_{i=1}^N$?
+- If we knew $\theta$ this would simply be 
+$$
+p(y_{N+1}|\theta)
+$$
+- In general we don't know $\theta$, but our current state of knowledge is summarized by the posterior $p(\theta|y)$
+- We define the posterior predictive distribution as 
+$$
+p(y_{N+1}|Y) = \int p(y_{N+1}|\theta) p(\theta|Y) d\theta
+$$
+- Note that we can think of this as an ensemble method:
+$$
+p(y_{N+1}|Y) \approx \frac{1}{S} \sum_{s=1}^S p(y_{N+1}|\tilde \theta_s),
+$$
+where $\lbrace \tilde \theta_s \rbrace_{s=1}^S$ is a large set of random draws from $p(\theta|Y)$.
+
+## Example I revisited
+
+- The posterior predictive distribution is very simple in this case:
+$$
+\begin{aligned}
+{\rm Pr}(Y_{N+1} = 1|Y) & = \int {\rm Pr}(Y_{N+1} = 1|\lambda) p(\lambda|Y) d\lambda \\
+&  = \int \lambda \; p(\lambda|Y) d\lambda \\
+& = {\rm E}[\lambda | Y] \\
+& = \frac{N_1+1}{N+2}
+\end{aligned}
+$$
+
+## Example II: Bayesian A/B Testing 
+
+- A company is testing two different online ads - A and B
+- Suppose ad A had 10,000 impressions with 317 click-throughs and B had 5,000 impressions with 152 click-throughs
+- Which ad should we pick?
+- The raw estimate of the CTR for $A$ is $317/10000 \approx 0.032$ and $152/5000 \approx 0.03$ for B
+- So we should pick $A$?
+
+## Posterior Calculation
+
+- Let $\lambda_A$ and $\lambda_B$ be the true click-through rates under ad $A$ and $B$
+- Suppose we assume a prior as 
+$$
+\lambda_A,\lambda_B \sim {\rm Beta}(1,20)
+$$
+
+- Using the results from above we then have posteriors 
+$$
+\begin{aligned}
+\lambda_A|Y & \sim {\rm Beta}(317 + 1, 10000-317 + 20), \\
+\lambda_B|Y & \sim {\rm Beta}(152 + 1, 5000-152 + 20). \\
+\end{aligned}
+$$
+
+- What is evidence for $\delta \equiv \lambda_A - \lambda_B > 0$? 
+
+## Posterior Simulation
+
+- How to simulate posterior of $\lambda_A,\lambda_B$ and $\delta$? 
+
+- We can use the following procedure:
+    - First sample $nSim$ draws of $\lambda_A$ and $\lambda_B$ from their respective Beta distributions
+    - Let these be $\lbrace \tilde \lambda_{A,s},\tilde \lambda_{B,s} \rbrace_{s=1}^{nSim}$
+    - Next define $\tilde \delta_s= \tilde \lambda_{A,s} - \tilde \lambda_{B,s}$ for each $s=1,\dots,nSim$
+    - Then $\lbrace \tilde \delta_s \rbrace_{s=1}^{nSim}$ will be draws from the implied posterior of $\delta$
+    - We can approximate ${\rm Pr}(\delta > 0|Y)$ simply as the fraction of positive $\tilde \delta_s$
+
+
+```{r, echo=TRUE,eval=FALSE}
+nSim <- 10000
+lambdaAPost <- rbeta(nSim,yA + a0,nA - yA + b0)
+lambdaBPost <- rbeta(nSim,yB + a0,nB - yB + b0)
+deltaPost <- lambdaAPost - lambdaBPost
+
+ProbDeltaPos <- sum(deltaPost > 0)/nsim
+```
+
+## Result
+
+
+<div class="columns-2">
+```{r bayesAB, echo=FALSE, fig.width=5,fig.height=4}
+
+postDF <- data.frame(lambdaA = lambdaAPost,
+                     lambdaB = lambdaBPost,
+                     delta = lambdaAPost - lambdaBPost) %>%
+  rowid_to_column(var = 'draw')
+
+postDF %>%
+  pivot_longer(names_to = 'Parameter',values_to = 'value',-draw) %>%
+  ggplot(aes(x=Value,fill=Parameter)) + geom_density(alpha=0.3) + 
+   geom_vline(aes(xintercept=0)) + 
+   labs(title = 'Posterior Distributions')
+```
+
+
+- ${\rm Pr}(\delta > 0) \approx$ `r prettyNum(ProbDeltaPos,digits=2)`
+
+- Should we go with option A? 
+</div>
+
+## Accounting for Risk
+
+- What is the associated risk of a decision? 
+
+- Example of loss function:
+$$
+L(\lambda_A,\lambda_B,D) = 
+\begin{cases}
+\lambda_B - \lambda_A, & \text{if $D=A$ and $\lambda_B > \lambda_A$,} \\
+0, & \text{if $D=A$ and $\lambda_A > \lambda_B$,} \\
+\lambda_A - \lambda_B, & \text{if $D=B$ and $\lambda_A > \lambda_B$,} \\
+0, & \text{if $D=B$ and $\lambda_B > \lambda_A$} 
+\end{cases}
+$$
+- We evaluate the loss of a decision $D$ as 
+$$
+\begin{aligned}
+{\hat L}(D) & \equiv \int L(\lambda_A,\lambda_B,D) \;p(\lambda_A,\lambda_B|Y) \;d\lambda_A d\lambda_B, \\
+& \approx \frac{1}{S} \sum_{s=1}^S L({\tilde \lambda}_{A,s},{\tilde \lambda}_{B,s},D). \\
+\end{aligned}
+$$
+
+## Posterior Risk
+
+```{r posteriorLoss}
+```
+
+$$
+{\hat L}(A) = `r prettyNum(lossA,digits=2)`
+$$
+$$
+{\hat L}(B) = `r prettyNum(lossB,digits=2)`
+$$
+- The risk of choosing $A$ is about three times lower than choosing $B$
+
+- We can also include other information in the decision analysis, e.g., costs of different decisions
+
+## Example III: Gaussian Model with known variance
+
+$$
+\begin{aligned}
+Y_i|\mu & \sim {\rm N}(\mu,\sigma^2),\qquad i=1,\dots,N, \\
+\mu & \sim {\rm N}(\mu_0,\sigma^2_0),
+\end{aligned}
+$$
+where we assume that $\sigma$ is known (as well as the prior parameters $\mu_0,\sigma_0$). 
+
+- This model is simple enough that we can solve for the posterior distribution analytically
+
+- The likelihood $p(Y_1,\dots,Y_N|\mu)$ is 
+
+$$
+\begin{aligned}
+p(Y_1,\dots,Y_N|\mu) & = \prod_{i=1}^N \frac{1}{\sigma \sqrt{2 \pi}} \exp \lbrace -\frac{1}{2 \sigma^2} (Y_i - \mu)^2 \rbrace,  \\
+& = \frac{1}{(\sigma \sqrt{2 \pi})^N} \exp \lbrace -\frac{1}{2\sigma^2} \sum_{i=1}^N (Y_i - \mu)^2 \rbrace
+\end{aligned}
+$$
+
+
+
+## "Completing the Square"
+
+- A useful result: 
+$$
+\sum_{j=1}^J c_j (x - m_j)^2 = c (x - m)^2 + C,
+$$
+where
+$$
+\begin{aligned}
+c & = \sum_{j=1}^J c_j, \\
+m & = \frac{\sum_{j=1}^J c_j m_j}{\sum_{j=1}^J c_j},
+\end{aligned}
+$$
+and $C$ is some constant that doesn't involve $x$
+
+## Deriving posterior 
+
+- The posterior for $\mu$ is then 
+$$
+p(\mu|Y) = \frac{ \exp \big \lbrace -\frac{1}{2} h(\mu) \big\rbrace  }{ \int \exp \big \lbrace -\frac{1}{2} h(\mu) \big\rbrace  d\mu},
+$$
+where
+$$
+h(\mu) \equiv \left[    \frac{1}{\sigma_0^2}(\mu-\mu_0)^2 +  \frac{1}{\sigma^2} \sum_{i=1}^N (\mu - Y_i)^2  \right],
+$$
+and we have canceled all constants not depending on $\mu$. 
+
+## Deriving posterior 
+
+- Using the result from above we then get 
+$$
+h(\mu) = c(\mu - m)^2 + C,
+$$
+where
+$$
+\begin{aligned}
+c  & \equiv \frac{N}{\sigma^2}  + \frac{1}{\sigma^2_0}, \\
+m & \equiv \frac{ \frac{1}{\sigma^2} \sum_{i=1}^N Y_i + \frac{1}{\sigma_0^2} \mu_0  }{ \frac{N}{\sigma^2}  + \frac{1}{\sigma^2_0}} = \frac{ \frac{N}{\sigma^2} \bar Y + \frac{1}{\sigma_0^2} \mu_0  }{ \frac{N}{\sigma^2}  + \frac{1}{\sigma^2_0}}
+\end{aligned}
+$$
+
+## Deriving posterior 
+
+- Since $C$ is just constant that doesn't depend on $\mu$ we then have 
+$$
+p(\mu|Y) = \frac{ \exp \big \lbrace  -\frac{c}{2} (\mu - m)^2  \big \rbrace }{ \int \exp \big \lbrace  -\frac{c}{2} (\mu - m)^2  \big \rbrace d\mu } = K \times \exp \big \lbrace  -\frac{c}{2} (\mu - m)^2  \big \rbrace,
+$$
+where $K$ is another constant that doesn't depend on $\mu$.
+
+- We recognize this as the density of a normal distribution with mean $m$ and variance $1/c$:
+
+$$
+p(\mu|Y) = {\rm N}(\mu| m, c^{-1})
+$$
+
+
+## Posterior Analysis
+
+- Note that as the prior gets "flat", i.e., $\sigma_0$ gets large, the posterior concentrates around the sample average:
+$$
+{\rm E}[\mu|Y] = m \rightarrow \bar Y ~{\rm as}~\sigma_0 \rightarrow \infty
+$$
+- On the other hand, when the prior has a large weight, i.e., $1/\sigma_0^2$ is large, then the posterior mean is pulled towards the prior mean $\mu_0$. 
+
+- This is an illustration of the "regularizing" effect of a prior. This is beneficial when the prior encodes information about $\mu$ that we already have prior to observing the data 
+
+
+## Posterior with Different Prior Strength
+
+```{r plotMuPost,fig.width=8,fig.height=4.5}
+```
+
+
+
+
