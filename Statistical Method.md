@@ -33,3 +33,4 @@ e.g. $Pr(\theta>2) = \int_{\theta>2}p(\theta)d\theta$
 
 variance is defined as $sd(\theta)/E(\theta)$, geometric mean is $exp(E[log(\theta)])$
 
+test
