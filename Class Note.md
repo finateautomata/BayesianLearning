@@ -19,4 +19,4 @@ Page 12. When new information comes in, is it real random?
 Page 15. Fixed $\theta$, we can generate data from model.
 $p(\theta)$ is prior distribution.
 
-
+test
