@@ -1,0 +1,31 @@
+slides > slide:not(.title-slide) {
+   background-image: url("radyLogo.jpg");
+   background-size: 20%;
+   background-repeat: no-repeat;
+   background-position: 3% 96%;
+ }
+ 
+ slides>slide.title-slide {
+    background-image: url('radySun.jpg');
+    background-size: 100% 100%;
+}
+
+slides > slide.title-slide hgroup h1 {
+  font-weight: bold;
+  font-size: 34pt;
+  color: white;
+  position: fixed;
+  top: 25%;
+  left: 60%;
+  transform: translate(-50%, -50%);
+}
+
+slides > slide.title-slide hgroup h2 {
+  font-size: 20pt;
+  color: white;
+  position: fixed;
+  top: 35%;
+  left: 51%;
+  transform: translate(-50%, -50%);
+}
+

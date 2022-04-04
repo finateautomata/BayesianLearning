@@ -1,0 +1,600 @@
+---
+title: "Hierarchical Models and Shrinkage Estimation"
+subtitle: 'Professor Karsten T. Hansen'
+author: "UC San Diego, Rady School of Management"
+date: "MGTA 495, Spring 2022"
+output:
+  ioslides_presentation:
+    smaller: true 
+    self_contained: true
+    transition: faster
+    widescreen: true
+    css: myCSS.css
+---
+
+<style>
+slides > slide.backdrop {
+  background: white;
+}
+</style>
+
+```{r setup, echo=FALSE,warning=FALSE,message=FALSE}
+library(knitr)
+opts_chunk$set(echo = FALSE,warning=FALSE,message=FALSE)
+read_chunk('code/code1.R')
+```
+
+```{r loadLibraries}
+```
+
+
+## Example: Uber Trip Data 
+
+```{r loadUberRides}
+```
+
+- `r prettyNum(nrow(dfIncl),big.mark=",")` Uber trips for `r prettyNum(nrow(dfStats), big.mark = ",")` users
+
+- Goal: Identify users who on average take high value trips 
+
+- This seems like an easy exercise right? 
+
+## Top 20
+
+```{r findTopRiders}
+```
+
+```{r, echo=F}
+filter(extremes, Position == 'Top 20')
+```
+
+## Bottom 20 
+
+```{r, echo=F}
+filter(extremes, Position == 'Bottom 20')
+```
+
+## Raw Averages
+
+```{r plotUberStats, fig.width=8,fig.height=4.75}
+```
+
+## General Problem!
+
+ - Whenever you want to compare averages of something, this problem will show up: <div class="red2"> Averages based on a small number of observations will always be more noisy than averages over a large number of observations </div>
+ 
+ - This means that the extremes will almost always be made up of the averages based on a small number of observations
+ 
+ - Solution: Users are similar but different from each other. We should use this information to our advantage. 
+ 
+ - Idea: We should "shrink" the raw means toward the overall mean in a way so that the noisy averages are shrunk more than the non-noisy averages:
+ 
+ $$
+ \hat \alpha_i = F_i(\bar Y_i)
+ $$
+- Standard approach takes $F_i(\bar Y_i) = \bar Y_i$ but as we have seen that is a bad idea!
+
+- We need $F_i(\bar Y_i) < \bar Y_i$ for large noisy averages ($F_i(\bar Y_i) > \bar Y_i$ for small noisy averages) and $F_i(\bar Y_i) \approx \bar Y_i$ for non-noisy averages
+
+
+## Hiearchical Model
+
+$$
+\begin{aligned}
+y_{ij}|\alpha_i,\sigma & \sim {\rm N}(\alpha_i,\sigma^2), \qquad j=1,\dots,N_i;i=1,\dots,N, \\
+\alpha_i|\mu,\sigma_\alpha & \sim {\rm N}(\mu,\sigma^2_\alpha), 
+\end{aligned}
+$$
+plus a prior distribution for $\sigma,\mu,\sigma_\alpha$.
+
+- This is also called a Multilevel Model or a model with partial pooling 
+
+- We are primarily interested in the posterior distribution of $\lbrace \alpha_i \rbrace_{i=1}^N$ but also in $\sigma_\alpha$.
+
+- What happens when $\sigma_\alpha \rightarrow 0$ and $\sigma_\alpha \rightarrow \infty$?
+
+## Example
+
+- Suppose initially that $\sigma,\mu,\sigma_\alpha$ are known. What is the posterior for $\alpha_i$? 
+
+- We can derive this analytically:
+
+$$
+p(\alpha_i|Y_i,\mu,\sigma,\sigma_\alpha) = {\rm N} (\alpha_i | \mu_{\alpha_i}, \tau^{-1}_{\alpha_i}),
+$$
+where
+$$
+\begin{aligned}
+\tau_{\alpha_i} & \equiv \frac{N_i}{\sigma^2} + \frac{1}{\sigma^2_\alpha}, \\
+\mu_{\alpha_i} & \equiv \tau^{-1}_{\alpha_i} \left( \frac{N_i}{\sigma^2} \bar Y_i + \frac{1}{\sigma^2_\alpha} \mu \right),    
+\end{aligned}
+$$
+and $\bar Y_i \equiv N_i^{-1} \sum_j Y_{ij}$
+
+## Special Cases
+
+- We can consider two special cases: $\sigma_\alpha \rightarrow 0$ and $\sigma_\alpha \rightarrow \infty$
+
+- The posterior mean of $\alpha_i$ in these two special cases is
+
+$$
+{\rm E}[\alpha_i | Y_i,\mu,\sigma_\alpha,\sigma] \rightarrow 
+\begin{cases}
+\bar Y_i & \text{for $\sigma_\alpha \rightarrow \infty$,} \\
+\mu & \text{for $\sigma_\alpha \rightarrow 0$.} 
+\end{cases}
+$$
+
+- These cases are also referred to as 
+    - $\sigma_\alpha \rightarrow \infty$ = "No Pooling" (everyone is completely different)
+    - $\sigma_\alpha \rightarrow 0$ = "Complete Pooling" (everyone is the same)
+    - $0 < \sigma_\alpha < \infty$ = "Partial pooling" (everyone is different but similar)
+
+- Preferred approach: Let the data help in determining size of $\sigma_\alpha$! 
+    - If there is evidence in the data that all users are very similar, then we should learn that $\sigma_\alpha$ is small
+    - If there is evidence in the data that users are very different, then we should learn that $\sigma_\alpha$ is large
+
+
+## Full Model 
+
+$$
+\begin{aligned}
+y_{ij}|\alpha_i,\sigma & \sim {\rm N}(\alpha_i,\sigma^2), \qquad j=1,\dots,N_i;i=1,\dots,N, \\
+\alpha_i|\mu,\sigma_\alpha & \sim {\rm N}(\mu,\sigma^2_\alpha), \\
+\mu & \sim {\rm N}(0,5^2), \\
+\sigma & \sim {\rm Cauchy}_+ (0,3), \\
+\sigma_\alpha & \sim {\rm Cauchy}_+ (0,3)
+\end{aligned}
+$$
+
+## Half Cauchy
+
+$$
+p(x|\gamma) =  \frac{1}{ \pi \gamma \left(1 + (\tfrac{x}{\gamma})^2 \right) }
+$$
+```{r,echo=FALSE, fig.height=3,fig.width=5}
+x <- seq(0,15,0.05)
+gamma <- 3
+
+y <- 1.0/(3.141*gamma*(1 + (x/gamma)^2 ))
+
+data.frame(x = x, y = y) %>%
+  ggplot(aes(x =x ,y = y)) + geom_line() + labs(title = 'Probability Density for Half Cauchy', subtitle = 'gamma=3')
+```
+
+
+## Finding the Posterior
+
+- This model - while simple - it already too complex to easily solve analytically
+
+- Note that the joint posterior is a distribution of 
+$$
+(\alpha_1,\dots,\alpha_N,\mu,\sigma,\sigma_\alpha),
+$$
+i.e., $N+3$ parameters where $N$ is the number of users. Therefore this is a probability distribution in close to 2,000 dimensions!   
+
+- We will use a Monte Carlo algorithm to numerically simulate this posterior distribution 
+
+- This algorithm will simulate the joint posterior by drawing a sequence of $S$ pseudo-random numbers from the posterior distribution: $\lbrace \tilde \alpha_s, \tilde \mu_s, \tilde \sigma_{\alpha,s},\tilde \sigma_s \rbrace_{s}^S$
+
+- We will map the model into the probabilistic language <span style="font-family:'Courier New'">Stan</span>
+
+- We will not go into the details here - more on that next class!
+
+## Stan code
+
+```stan
+data {
+  int<lower=0> nObs;                         // number of rows in full data 
+  int<lower=0> nUsers;                       // number of users
+  int<lower=1,upper=nUsers> userID[nObs];    // user index for each row
+  vector[nObs] y;                            // log amount
+}
+
+parameters {
+  real<lower=0> sigma;         // sd alpha
+  real mu;                     // mean alpha
+  vector[nUsers] alpha;        // user effects
+  real<lower=0> sigma_y;       // sd data
+}
+
+model {
+  sigma ~ cauchy(0, 2.5);
+  mu ~ normal(0,5);
+  alpha ~ normal(mu, sigma);
+  sigma_y ~ cauchy(0, 2.5);
+
+  y ~ normal(alpha[userID], sigma_y);
+}
+
+```
+
+## Result 
+
+```{r getBayesEst1}
+```
+
+```{r plotBayesEst1, fig.height=4.5,fig.width=8}
+```
+
+## Result 
+
+```{r plotBayesEst2, fig.height=4.5,fig.width=8}
+```
+
+## How did we make this?
+
+- The algorithm generates a stream of pseudo random numbers from the distribution we are interested in
+
+- Why is this useful? Note that if $\lbrace \tilde x_s \rbrace_{s=1}^S$ are random draws from a distribution $\pi$ then 
+$$
+{\rm E}_{\pi} [f(x)] \approx \frac{1}{S} \sum_{s=1}^S f(\tilde x_s),
+$$
+for a function $f$, where we can control the approximation error by choosing large enough enough $M$. 
+
+- This is called <span style="color:red">Monte Carlo simulation</span>
+
+- Almost all Bayesian models are trained this way
+
+- Next week we will look at the details of how these algorithms are designed 
+
+## Using Draws
+
+- Posterior average: $\bar {\tilde x} =  \frac{1}{S} \sum_{s=1}^S \tilde x_s$
+
+- Posterior standard deviation: $\sqrt{\frac{1}{S} \sum_{s=1}^S (\tilde x_s - \bar {\tilde x})^2}$
+
+- Posterior quantiles: Empirical quantiles of $\lbrace \tilde x_s \rbrace_{s=1}^S$
+
+- Posterior distribution: histogram or density of $\lbrace \tilde x_s \rbrace_{s=1}^S$
+
+## Using Draws 
+
+<div class="columns-2">
+
+```{r posteriorAlpha, fig.width=5,fig.height=4.5}
+```
+
+
+```{r}
+theStats
+```
+
+</div>
+
+
+
+## Using Draws: Posterior Ranks
+
+- Suppose want to identify the top 15 users in terms of value (measured as average spend per trip)
+
+- This is a question about <span style="color:red">rank</span>. For example the top ranked user is 
+$$
+user_1(\alpha_1,\dots,\alpha_N) \equiv \lbrace i : \alpha_i \geq \alpha_j,~ \forall j \in \lbrace 1,\dots,N \rbrace \rbrace
+$$
+- Note that the rank depends on the unknown parameters $\alpha_1,\dots,\alpha_N$. 
+
+- We can use the posterior draws of the $\alpha$ vector to simulate posterior ranks: 
+    - For each draw $\tilde \alpha$ find the rank of each user: $\tilde r_1,\dots,\tilde r_N$
+    - This creates $S$ draws of each user's ranking
+    - Then we can summarize these $S$ draws and find the mean rank, min rank, max rank etc for each user
+
+
+
+## Posterior Ranks
+
+```{r posteriorRanking}
+```
+
+```{r}
+postRanksStats %>%
+    slice_min(meanPostRank,n=15)
+```
+
+
+## Multilevel Regression Model 
+
+- The basic idea of shrinkage estimation can be applied to any model
+
+- Let's consider a regression model with a multilevel/hierarchical structure:
+
+$$
+\begin{aligned}
+y_{ij}|\alpha_i,\beta_i,\sigma & \sim {\rm N}(\alpha_i + \beta_i x_i,\sigma^2), \qquad j=1,\dots,N_i;i=1,\dots,N, \\
+\alpha_i,\beta_i|\mu,\Sigma & \sim {\rm N}(\mu,\Sigma), 
+\end{aligned}
+$$
+- Note that without the second stage, this would be like training an independent regression model for each $i$
+
+- The model is closed by specifying a prior for $\sigma,\mu,\Sigma$. 
+
+- Note that
+$$
+\Sigma \rightarrow 
+\begin{cases}
+0 & \text{One pooled regression,} \\
+\infty & \text{$N$ independent regressions}
+\end{cases}
+$$
+
+## Case Study: Multilevel Demand Model
+
+```{r retailData}
+```
+
+
+- Weekly sales and prices of Frito Lay Pretzels for 76 Stores 
+- 3 Years of data 
+- We want to allow stores to have different baseline sales and different demand price effects 
+
+$$
+\begin{aligned}
+\log y_{sw} & = \alpha_s + \beta_s \log p_{sw} + \varepsilon_{sw}, \\
+\varepsilon_{sw}|\sigma & \sim {\rm N}(0,\sigma^2), \\
+\alpha_s,\beta_s|\mu,\Sigma & \sim {\rm N}(\mu,\Sigma), 
+\end{aligned}
+$$
+where $y_{sw}$ is sales volume for store $s$ in week $w$, and $p_{sw}$ is the brand price for store $s$ in week $w$
+
+
+- Let's try two different priors:
+    - A shrinkage prior where we allow the model to learn the degree to which stores are similar 
+    - An independence prior with zero pooling, i.e., we treat the 76 stores as independent 
+
+
+## Priors
+
+- To specify a prior on the covariance matrix $\Sigma$, we use the decomposition 
+$$
+\Sigma \equiv
+\begin{bmatrix} 
+\sigma_{11} & \sigma_{12} \\
+\sigma_{12} & \sigma_{22}
+\end{bmatrix}
+ = 
+\begin{bmatrix} 
+\tau_1 & 0 \\
+0 & \tau_2
+\end{bmatrix} \times 
+\begin{bmatrix} 
+1 & \rho  \\
+\rho & 1
+\end{bmatrix} \times
+\begin{bmatrix} 
+\tau_1 & 0 \\
+0 & \tau_2
+\end{bmatrix},
+$$
+where $\rho$ is the correlation coefficient between $\alpha_i$ and $\beta_i$. 
+
+- Priors are then assigned to $\tau_1,\tau_2$ and $\rho$:
+$$
+\begin{aligned}
+\tau_1 & \sim {\rm Cauchy}_{+}(0,2.5), ~~\tau_2  \sim {\rm Cauchy}_{+}(0,2.5)\\
+\rho & \sim {\rm U}(-1,1).
+\end{aligned}
+$$
+- For the independence prior we just assign independent diffuse (meaning large variance) normal distributions for $\alpha_s$ and $\beta_s$, e.g., $\alpha_s \sim {\rm N}(0,10), ~\beta_s \sim {\rm N}(0,10)$
+
+## Results (With Shrinkage)
+
+```{r retailResultsShrinkage}
+```
+
+```{r plotResultsShrinkage}
+```
+
+```{r, fig.width=10,fig.height=5}
+alphaStatsPlot
+```
+
+## Results (With Shrinkage)
+
+```{r, fig.width=9,fig.height=5.25}
+alphaFullPosterior
+```
+
+## Results (With Shrinkage)
+
+```{r, fig.width=10,fig.height=5}
+betaStatsPlot
+```
+
+## Results (With Shrinkage)
+
+```{r, fig.width=6,fig.height=5.25}
+betaFullPosterior
+```
+
+## Covariation 
+
+```{r, fig.width=8,fig.height=5.25}
+jointStats
+```
+
+## Illustration of Posterior Uncertainty
+
+```{r, fig.width=9.5,fig.height=5}
+plotFull
+```
+
+##
+
+```{r plotResultsNoShrinkage, fig.height = 5, fig.width = 10}
+```
+
+
+## Expected Demand 
+
+- Let's try to use the model to predict expected future demand $Y^*_s$ for a store $s$
+
+- Note that the generative model of sales is a log-normal distribution. Therefore,
+$$
+{\rm E}[Y_s^* | \theta_s,\sigma] = \exp \Big \lbrace \alpha_s + \beta_s \log p + \frac{\sigma^2}{2} \Big \rbrace \equiv g(\theta_s,\sigma;p)
+$$
+- Notice that this is a simple function of $\theta_s \equiv (\alpha_s,\beta_s)$ and $p$. 
+
+- Since our algorithm already provides us draws from the posterior for $\theta_s,\sigma$, we can easily generated draws of $g$ simply as 
+$$
+\big \lbrace g(\tilde \theta_{sd},\tilde \sigma_d;p) \big \rbrace_{d=1}^D
+$$
+- By varying $p$ we can then easily trace out the effect of price changes on expected demand
+
+## 
+
+```{r plotExpectedDemand, fig.height=5.5,fig.width=10}
+```
+
+## Price Setting?
+
+## Full Uncertainty 
+
+- What is the full uncertainty facing the store about next week's demand?
+- This involves two sources: model uncertainty and the specific draw of demand that will materialize conditional on a specific model
+- The answer is the posterior predictive distribution:
+$$
+p(Y_s^*|p,{\rm data}) = \int p(Y_s^*|p,\theta_s,\sigma) p(\theta_s,\sigma|{\rm data}) d\theta_s d\sigma
+$$
+
+- We can simulate this quite easily:
+    1. For each simulated draw $\tilde \theta_s,\tilde \sigma$,
+    2. Sample $\tilde Y_s^*$ as
+    $$
+    {\tilde Y}^* \sim {\rm LogNormal}(\tilde \alpha_s + \tilde \beta_s \log p,\tilde \sigma)
+    $$
+
+
+## 
+
+```{r posteriorPredictive, fig.height=5.5,fig.width=10}
+```
+
+
+## Model 2: Explain variation 
+
+- Our model above naturally incorporates variation in parameters across stores
+
+- Can we explain this variation? Why are some stores price sensitive and others not? Why do some stores have low baseline sales? 
+
+- We could do some simple correlations/regressions of parameter estimates on store characteristics....BUT...a much better approach is to incorporate store characteristics explicitly in the model and then see if we can learn any dependencies 
+
+- All we have to do is modify the prior distribution of $\theta_s  = (\alpha_s,\beta_s)$
+
+
+
+## Model 2
+
+$$
+\begin{aligned}
+\log y_{sw} & = \alpha_s + \beta_s \log p_{sw} + \varepsilon_{sw}, \\
+\varepsilon_{sw}|\sigma & \sim {\rm N}(0,\sigma^2), \\
+\alpha_s & = \gamma_{\alpha}'Z_s + \psi_{\alpha,s}, \\
+\beta_s & = \gamma_{\beta}'Z_s + \psi_{\beta,s}, \\ 
+\psi_s \equiv  (\psi_{\alpha,s},\psi_{s,\beta})|\Sigma & \sim {\rm N}(0,\Sigma), \\
+\end{aligned}
+$$
+
+- Here $Z_s$ is a vector store characteristics for store $s$
+
+- The previous model is a special case of this with $Z_s=1$
+
+- We can use the same priors as the previous mmodel plus a prior on the $\gamma$ parameters, e.g.,
+$$
+\gamma_{\alpha} \sim {\rm N}(0, 5^2 I_K), ~~\gamma_{\beta} \sim {\rm N}(0, 5^2 I_K)
+$$
+
+## Results 
+
+```{r resultsModel2}
+```
+
+```{r, fig.height=5, fig.width=9}
+alphaPlot
+```
+
+## Results 
+
+```{r, fig.height=5, fig.width=9}
+betaPlot
+```
+
+## Results 
+
+```{r, fig.height=5, fig.width=9}
+alphaBetaPlot
+```
+
+## {.flexbox .vcenter}
+
+<div class="centered">
+<font size="22">Appendix</font>
+</div>
+
+## Deriving Posterior for Normal Model 
+
+The model is 
+$$
+\begin{aligned}
+y_{ij}|\alpha_i,\sigma & \sim {\rm N}(\alpha_i,\sigma^2), \qquad j=1,\dots,N_i;i=1,\dots,N, \\
+\alpha_i|\mu,\sigma_\alpha & \sim {\rm N}(\mu,\sigma^2_\alpha), 
+\end{aligned}
+$$
+
+- To get the posterior for $\alpha_i$ conditional on the remaining parameters, we need to calculate
+
+$$
+p(\alpha_i | y_i ) = \frac{p(y_i|\alpha_i) p(\alpha_i)}{\int p(y_i|\alpha_i) p(\alpha_i) d\alpha_i},
+$$
+where the likelihood function is 
+
+$$
+\begin{aligned}
+p(y_i|\alpha_i) & = \prod_{j=1}^{N_i} \frac{1}{\sqrt{ 2 \pi} \sigma} \exp \Big(-\frac{1}{2\sigma^2}  (y_{ij} - \alpha_i)^2 \Big) \\
+ & = \Big( \frac{1}{\sqrt{ 2 \pi} \sigma} \Big)^{N_i} \exp \Big(-\frac{1}{2\sigma^2} \sum_{j=1}^{N_i} (y_{ij} - \alpha_i)^2 \Big)
+\end{aligned}
+$$
+
+## 
+
+- Note that we can rewrite the sum as 
+
+$$
+\begin{aligned}
+\sum_{j=1}^{N_i} (y_{ij} - \alpha_i)^2 & = \sum_j (Y_{ij}^2 + \alpha_i^2 - 2 Y_{ij} \alpha_i) \\
+ & = N_i (\alpha_i^2 - 2 \alpha_i \bar y_i) + \sum_j y_{ij}^2 \\ 
+ & = N_i (\alpha_i -  \bar y_i)^2  + \sum_j y_{ij}^2 - N_i {\bar y}_i^2
+\end{aligned}
+$$
+
+- The second term doesn't depend on $\alpha_i$ and will cancel out in the fraction definining the posterior. Therefore, we can write the numerator as 
+$$
+\exp \Big(-\frac{N_i}{2 \sigma^2} (\alpha_i -  \bar y_i)^2 \Big) \times \exp \Big( -\frac{1}{2 \sigma^2_\alpha} (\alpha_i -  \mu)^2 \Big) = \\ \exp\Big( - \frac{1}{2} \Big[ \frac{N_i}{\sigma^2} (\alpha_i -  \bar y_i)^2  + \frac{1}{\sigma^2_\alpha} (\alpha_i -  \mu)^2    \Big]   \Big)
+$$
+
+## 
+
+ - Using the "completing the square" result from week 1, slide 30, we can write the term in square brackets as 
+$$
+\frac{N_i}{\sigma^2} (\alpha_i -  \bar y_i)^2  + \frac{1}{\sigma^2_\alpha} (\alpha_i -  \mu)^2 = \\
+\Big( \frac{N_i}{\sigma^2} + \frac{1}{\sigma^2_\alpha}  \Big) \big[ \alpha_i - \mu_{\alpha_i} \big]^2 + C,
+$$
+ where
+
+$$
+\mu_{\alpha_i} \equiv \frac{ \frac{N_i}{\sigma^2} \bar y_i + \frac{1}{\sigma^2_\alpha} \mu }{\frac{N_i}{\sigma^2}  + \frac{1}{\sigma^2_\alpha} },
+ $$
+and $C$ is a constant that doesn't depend on $\alpha_i$.
+
+##
+
+- Collecting terms we then have the posterior for $\alpha_i$: 
+$$
+p(\alpha_i|y_i) = \frac{  \exp \big(  -\frac{ \tau_{\alpha_i} }{2} (\alpha - \mu_{\alpha_i} )^2   \big)       }{ \int \exp \big(  -\frac{\tau_{\alpha_i}}{2} (\alpha - \mu_{\alpha_i})^2   \big)  d\alpha_i  },
+$$
+where $\tau_{\alpha_i} = \tfrac{N_i}{\sigma^2} + \tfrac{1}{\sigma^2_\alpha}$. We can either solve the integral in the denominator or simply realize that the numerator is proportional to the density for normal distribution. Either way we have 
+
+$$
+p(\alpha_i|y_i) = {\rm N}(\mu_{\alpha_i}, \tau^{-1}_{\alpha_i})
+$$
+
+
