@@ -221,6 +221,35 @@ pre code {
 \]</span></p>
 <p>The parameters of the model are <span class="math inline">\(\lbrace \alpha_i \rbrace_{i=1}^N,\mu,\sigma\)</span> with <span class="math inline">\(\mu\)</span> being the overall mean ability and <span class="math inline">\(\sigma\)</span> determining the dispersion - and the amount of shrinkage applied to the <span class="math inline">\(\alpha_i\)</span>’s towards <span class="math inline">\(\mu\)</span>.</p>
 <p>This model has been coded in the probabilistic language <strong>Stan</strong> (see the model file <code>MLM_binomial.stan</code>). The model has already been trained - you do NOT need to re-train it for this assignment (although you can if you want - the script that was used to train the model is <code>run_stan.r</code>). The file <code>thetaDrawsM1.csv</code> contains the results. This file has three columns and 3,000,000 rows. The rows are 2,000 random draws from the posterior of each player’s ability <span class="math inline">\(\alpha_i\)</span> (so 2,000*1,500 = 3 million in total). The first column is index for each draw (1 to 2000), then player index and finally the value of <span class="math inline">\(\alpha_i\)</span> for that draw.</p>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.1 ──</code></pre>
+<pre><code>## ✓ ggplot2 3.3.5     ✓ purrr   0.3.4
+## ✓ tibble  3.1.6     ✓ dplyr   1.0.8
+## ✓ tidyr   1.2.0     ✓ stringr 1.4.0
+## ✓ readr   2.1.2     ✓ forcats 0.5.1</code></pre>
+<pre><code>## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(rstan)</code></pre>
+<pre><code>## Loading required package: StanHeaders</code></pre>
+<pre><code>## rstan (Version 2.21.3, GitRev: 2e1f913d3ca3)</code></pre>
+<pre><code>## For execution on a local, multicore CPU with excess RAM we recommend calling
+## options(mc.cores = parallel::detectCores()).
+## To avoid recompilation of unchanged Stan programs, we recommend calling
+## rstan_options(auto_write = TRUE)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;rstan&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:tidyr&#39;:
+## 
+##     extract</code></pre>
+<pre class="r"><code>draws &lt;- read_csv(&#39;thetaDrawsM1.csv&#39;)</code></pre>
+<pre><code>## Rows: 3000000 Columns: 3
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## dbl (3): draw, player, value
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <div id="a-1" class="section level3">
 <h3>A</h3>
 <p>Calculate the posterior expectation of each <span class="math inline">\(\alpha_i\)</span> (hint: just take the average of the draws for each player) and find the top 10 worst players according to the posterior expectation of ability. Do you get the same 10 players as in Question 1?</p>

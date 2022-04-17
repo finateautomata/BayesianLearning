@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 
@@ -79,10 +79,44 @@ The parameters of the model are $\lbrace \alpha_i \rbrace_{i=1}^N,\mu,\sigma$ wi
 
 This model has been coded in the probabilistic language **Stan**  (see the model file `MLM_binomial.stan`). The model has already been trained - you do NOT need to re-train it for this assignment (although you can if you want - the script that was used to train the model is `run_stan.r`). The file `thetaDrawsM1.csv` contains the results. This file has three columns and 3,000,000 rows. The rows are 2,000 random draws from the posterior of each player's ability $\alpha_i$ (so 2,000*1,500 = 3 million in total). The first column is index for each draw (1 to 2000), then player index and finally the value of $\alpha_i$ for that draw.
 
+```{r}
+library(tidyverse)
+library(rstan)
+```
+
+```{r}
+
+df <- read_csv('data.csv')
+parameters <- read_csv('parameters.csv')
+draws <- read_csv('thetaDrawsM1.csv')
+
+```
 
 ### A 
 
 Calculate the posterior expectation of each $\alpha_i$ (hint: just take the average of the draws for each player) and find the top 10 worst players according to the posterior expectation of ability. Do you get the same 10 players as in Question 1? 
+
+```{r}
+q1 <- df %>% group_by(player) %>% summarise(mean(y))
+colnames(q1) = c('player', 'win_ratio')
+q1$a = log(q1$win_ratio / (1 - q1$win_ratio))
+q1Top10 <- q1 %>% slice_min(a, n = 10)
+
+#### question2 ####
+q1 %>% slice_max(a, n=10)
+q2 <- merge(q1, df %>% group_by(player) %>% count(), on='player')
+q2 %>% slice_max(a, n=10)
+# the best player only played 5 games
+
+#### question3 ####
+q3 = merge(q2, parameters, on='player')
+q3 = q3[-c(499),]
+
+```
+```{r}
+ggplot(q3, aes(x=alpha, y=a)) + geom_point()+ coord_fixed(ratio = 1)
+```
+
 
 ### B 
 
